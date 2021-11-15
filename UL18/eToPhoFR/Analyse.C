@@ -108,7 +108,10 @@ void Analyse::Loop(string fnamein, string fnameout, bool isData, double xsec, in
     nb = fChain->GetEntry(jentry);   nbytes += nb;
     // if (Cut(ientry) < 0) continue;
 
+<<<<<<< HEAD
     if(debug || debugL1) cout<<"and??";
+=======
+>>>>>>> f77897b1bc47c4b55708e71b0442939fdc01e788
     bool isdoublephoHLT70 = HLTPho>>7&1;
     if(!isdoublephoHLT70)
       continue;
