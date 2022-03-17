@@ -13,12 +13,6 @@
 
 using namespace std;
 
-Float_t roundoff(float value) {
-  Float_t pow_10 = pow(10.0f, 2);
-  return round(value * pow_10) / pow_10;
-}
-
-//Float_t getSF(TH2F* h, Float_t eta, Float_t pt) { 
 Float_t getSF(Float_t eta, Float_t pt) { 
   const int mpt = 9999;
   Float_t pt_min[mpt];
@@ -424,6 +418,7 @@ void plots(){
    }
 
    const Int_t nhist=4;
+   TH1F* pre_rebin[nfile][nhist];
    TH1F* hist[nfile][nhist];
    THStack *hs[nhist];
 
@@ -437,11 +432,16 @@ void plots(){
    }
 
    for (Int_t f=0; f<nfile_eff;f++) {
-       hist[f][0] = new TH1F("phoEta"+sample[f],"phoEta"+sample[f],15,0,1.5);
+       pre_rebin[f][0] = new TH1F("phoEta"+sample[f],"phoEta"+sample[f],10,0,1.5);
+       pre_rebin[f][1] = new TH1F("phoPhi"+sample[f],"phoPhi"+sample[f],10,-3.15,3.15);
+       pre_rebin[f][2] = new TH1F("nPUPPIjet"+sample[f],"nPUPPIjet"+sample[f],6,0,6);
+       pre_rebin[f][3] = new TH1F("PUPPIjetHT"+sample[f],"PUPPIjetHT"+sample[f],500,0,1000);
+              
+       /*hist[f][0] = new TH1F("phoEta"+sample[f],"phoEta"+sample[f],15,0,1.5);
        hist[f][1] = new TH1F("phoPhi"+sample[f],"phoPhi"+sample[f],10,-3.15,3.15);
        hist[f][2] = new TH1F("nPUPPIjet"+sample[f],"nPUPPIjet"+sample[f],6,0,6);
        hist[f][3] = new TH1F("PUPPIjetHT"+sample[f],"PUPPIjetHT"+sample[f],500,0,1000);
-       rebin(hist[f][3]);
+       */
        /*hist[f][0] = new TH1F("phoBDT"+sample[f],"phoBDT"+sample[f],25,0,1);
        hist[f][1] = new TH1F("phoEt"+sample[f],"phoEt"+sample[f],20,100,900);
        hist[f][2] = new TH1F("phoEta"+sample[f],"phoEta"+sample[f],30,-1.5,1.5);
@@ -466,6 +466,12 @@ void plots(){
        hist[f][21] = new TH1F("zmass"+sample[f],"zmass"+sample[f],30,80,110);
        hist[f][22] = new TH1F("ele_pt"+sample[f],"ele_pt"+sample[f],35,0,350);
        hist[f][23] = new TH1F("ele_eta"+sample[f],"ele_eta"+sample[f],30,-2.5,2.5);*/
+   }
+
+   for (Int_t i=0; i<nhist; i++) {
+     for (Int_t f=0; f<nfile_eff;f++) {
+        hist[f][i] = rebin(pre_rebin[f][i]);
+     }
    }
 
    if (isEE) {
@@ -724,6 +730,7 @@ void plots(){
              hist[j][i]->SetFillColor(kOrange-4);
              hist[j][i]->SetLineColor(kOrange-4);
              for (Int_t ibin=1; ibin<=hist[j][i]->GetNbinsX() ; ibin++) {
+                std::cout << ibin << " " <<hist[1][3]->GetBinContent(ibin) << std::endl;
                 ZvvG_ev[i]+=hist[j][i]->GetBinContent(ibin);
              }
            }
@@ -981,18 +988,18 @@ void plots(){
       leg->SetFillStyle(0);
       leg->SetNColumns(3);
 
-      string data_string = "Data "+std::to_string(data_ev[0]);
-      string ZvvG_string = "Z(#rightarrow #nu #nu) #gamma "+std::to_string(round(ZvvG_ev[0]));
-      string WlvG_string = "W (#rightarrow l #nu) #gamma "+std::to_string(round(WlvG_ev[0]));
-      string ZllG_string = "Z(#rightarrow ll) #gamma "+std::to_string(round(ZllG_ev[0]));
-      string GG_string = "#gamma #gamma "+std::to_string(round(GG_ev[0]));
-      string Gjets_string = "#gamma + jets "+std::to_string(round(Gjets_ev[0]));
-      string QCD_string = "QCD "+std::to_string(round(QCD_ev[0]));
-      string TTg_string = "t#gamma, tt#gamma "+std::to_string(round(TTg_ev[0]));
-      string VV_string = "WW, WZ, ZZ "+std::to_string(round(VV_ev[0]));
-      string Wlv__string = "W(#rightarrow #mu/#tau #nu) "+std::to_string(round(Wlv_ev[0]));
-      string Efakes_string = "e fakes "+std::to_string(round(Efake_ev[0]));
-      string Jfakes_string = "jet fakes "+std::to_string(round(Jfake_ev[0]));
+      string data_string = "Data ("+std::to_string(data_ev[0])+" ev.)";
+      string ZvvG_string = "Z(#rightarrow #nu #nu) #gamma ("+std::to_string(ZvvG_ev[0])+" ev.)";
+      string WlvG_string = "W (#rightarrow l #nu) #gamma ("+std::to_string(WlvG_ev[0])+" ev.)";
+      string ZllG_string = "Z(#rightarrow ll) #gamma ("+std::to_string(ZllG_ev[0])+" ev.)";
+      string GG_string = "#gamma #gamma ("+std::to_string(GG_ev[0])+" ev.)";
+      string Gjets_string = "#gamma + jets ("+std::to_string(Gjets_ev[0])+" ev.)";
+      string QCD_string = "QCD ("+std::to_string(QCD_ev[0])+" ev.)";
+      string TTg_string = "t#gamma, tt#gamma ("+std::to_string(TTg_ev[0])+" ev.)";
+      string VV_string = "WW, WZ, ZZ ("+std::to_string(VV_ev[0])+" ev.)";
+      string Wlv__string = "W(#rightarrow #mu/#tau #nu) ("+std::to_string(Wlv_ev[0])+" ev.)";
+      string Efakes_string = "e fakes ("+std::to_string(Efake_ev[0])+" ev.)";
+      string Jfakes_string = "jet fakes ("+std::to_string(Jfake_ev[0])+" ev.)";
      
       if (is2017 || is2018) {
          leg->AddEntry(hist[0][i], data_string.c_str(), "ep");
