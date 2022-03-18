@@ -55,7 +55,7 @@ Float_t getSF(Float_t eta, Float_t pt) {
 
 Float_t eleFakeWeight(Float_t eta) {
 
-   Float_t weight = 0.0504885 + -0.00999998*fabs(eta) + -0.0112097*eta*eta;
+   Float_t weight = 0.0504885 + (-0.00999998*fabs(eta)) + (-0.0112097)*eta*eta;
    return weight;
 
 }
@@ -254,8 +254,7 @@ void plots(){
      file[21] = new TFile(path2+"QCDHT700to1000TuneCP5PSWeights13TeVmadgraphMLMpythia8RunIISummer20UL16MiniAOD106X.root");
      file[22] = new TFile(path2+"QCDHT2000toInfTuneCP5PSWeights13TeVmadgraphMLMpythia8RunIISummer20UL16MiniAOD106X.root");
      file[23] = new TFile(path+"WGToLNuG01J5fPtG130TuneCP513TeVamcatnloFXFXpythia8RunIISummer20UL16MiniAODAPV106XpreVFP.root");
-     //file[24] = new TFile(path2+"WGJetsMonoPhotonPtG130TuneCP513TeVmadgraphpythia8RunIISummer20UL16MiniAOD106X.root"); 
-     file[24] = new TFile(path2+"WGToLNuG01J5fPtG130TuneCP513TeVamcatnloFXFXpythia8RunIISummer20UL16MiniAOD106X.root");
+     file[24] = new TFile(path2+"WGJetsMonoPhotonPtG130TuneCP513TeVmadgraphpythia8RunIISummer20UL16MiniAOD106X.root"); 
      file[25] = new TFile(path+"TTGJetsTuneCP513TeVamcatnloFXFXmadspinpythia8RunIISummer20UL16MiniAODAPV106XpreVFP.root");
      file[26] = new TFile(path2+"TTGJetsTuneCP513TeVamcatnloFXFXmadspinpythia8RunIISummer20UL16MiniAOD106X.root");
      file[27] = new TFile(path+"WWTuneCP513TeVpythia8RunIISummer20UL16MiniAODAPV106XpreVFP.root");
@@ -317,7 +316,9 @@ void plots(){
    Float_t ph_HoverE;
    Float_t ph_BDTpred;
    Float_t ph_et;
+   Float_t ph_SCeta;
    Float_t ph_eta;
+   Float_t ph_SCphi;
    Float_t ph_phi;
    Float_t ph_E2x2Full5x5;
    Float_t ph_R9Full5x5;
@@ -339,7 +340,6 @@ void plots(){
    Float_t elePt;
    Float_t eleEta;
    Double_t zmass;
-   Bool_t pass95;
    Int_t doubleCounting;
    Char_t ph_QualityBits;
 
@@ -356,10 +356,9 @@ void plots(){
    Bool_t   eleVeto;
    Bool_t   muoVeto;
    Bool_t   tauVeto;
-   Bool_t   haspixelseed;
-   Bool_t   passjetfakes;
 
    Int_t    genPDGid;
+   Float_t  nPhoCand;
 
    TTree *tree[nfile];
    for (Int_t i=0; i<nfile_eff;i++) {
@@ -372,7 +371,9 @@ void plots(){
      tree[i]->SetBranchAddress("ph_hoe",&ph_HoverE);
      tree[i]->SetBranchAddress("ph_BDTpred",&ph_BDTpred);
      tree[i]->SetBranchAddress("ph_et",&ph_et);
+     tree[i]->SetBranchAddress("ph_sc_eta", &ph_SCeta);
      tree[i]->SetBranchAddress("ph_eta",&ph_eta);
+     tree[i]->SetBranchAddress("ph_sc_phi", &ph_SCphi);
      tree[i]->SetBranchAddress("ph_phi",&ph_phi);
      tree[i]->SetBranchAddress("ph_E2x2Full5x5",&ph_E2x2Full5x5);
      tree[i]->SetBranchAddress("ph_R9Full5x5", &ph_R9Full5x5);
@@ -394,7 +395,6 @@ void plots(){
      tree[i]->SetBranchAddress("tag_Ele_pt", &elePt);
      tree[i]->SetBranchAddress("tag_Ele_eta", &eleEta);
      tree[i]->SetBranchAddress("pair_mass", &zmass);
-     tree[i]->SetBranchAddress("pass95", &pass95);
      tree[i]->SetBranchAddress("doubleCounting", &doubleCounting);
      tree[i]->SetBranchAddress("ph_QualityBits", &ph_QualityBits);
 
@@ -409,9 +409,8 @@ void plots(){
      tree[i]->SetBranchAddress("eleVeto", &eleVeto);
      tree[i]->SetBranchAddress("muoVeto", &muoVeto);
      tree[i]->SetBranchAddress("tauVeto", &tauVeto);
-     tree[i]->SetBranchAddress("haspixelseed", &haspixelseed);
-     tree[i]->SetBranchAddress("passjetfakes", &passjetfakes);
      tree[i]->SetBranchAddress("genPDGid", &genPDGid);
+     tree[i]->SetBranchAddress("nPhoCand", &nPhoCand);
 
      tree[i]->SetBranchAddress("nPUPPIJet30", &nPUPPIJet30);
      tree[i]->SetBranchAddress("PUPPIJetHt30", &PUPPIJetHt30);
@@ -536,18 +535,16 @@ void plots(){
         //Data
         if (fil == 0) {
           if (ph_et < 225) continue;
-          if (fabs(ph_eta) > 1.4442) continue;
-          if (!pass95) continue;
+          //if (nPhoCand > 1.1) continue;
           if (ph_SigmaIEtaIEta < 0.001) continue;
           if (ph_SigmaIPhiIPhi < 0.001) continue;
           if (abs(ph_SeedTime) > 3.) continue;
           if (deltaPhiPUPPImetPho < 2.0) continue;
           if (phoPtOverPUPPImet > 1.4) continue;
-          if (puppiMET < 160) continue;
+          if (puppiMET < 200) continue;
           if (minDeltaPhiPUPPImetJet30 < 0.5) continue;
           if (hasElectron) continue;
           if (hasMuon) continue;
-          if (haspixelseed) continue;
           if (eleVeto == 1) continue;
           if (muoVeto == 1) continue;
           if (tauVeto == 1) continue;
@@ -557,18 +554,16 @@ void plots(){
         if ((fil != 0) && (fil !=22) && (fil != 23)) {
           if (genPDGid != 22) continue;
           if (ph_et < 225) continue;
-          if (fabs(ph_eta) > 1.4442) continue;
-          if (!pass95) continue;
+          //if (nPhoCand > 1.1) continue;
           if (ph_SigmaIEtaIEta < 0.001) continue;
           if (ph_SigmaIPhiIPhi < 0.001) continue;
           if (abs(ph_SeedTime) > 3.) continue;
           if (deltaPhiPUPPImetPho < 2.0) continue;
           if (phoPtOverPUPPImet > 1.4) continue;
-          if (puppiMET < 160) continue;
+          if (puppiMET < 200) continue;
           if (minDeltaPhiPUPPImetJet30 < 0.5) continue;
           if (hasElectron) continue;
           if (hasMuon) continue;
-          if (haspixelseed) continue;
           if (eleVeto == 1) continue;
           if (muoVeto == 1) continue;
           if (tauVeto == 1) continue;
@@ -577,18 +572,16 @@ void plots(){
         //efakes
         if (fil == 22) {
           if (ph_et < 225) continue;
-          if (fabs(ph_eta) > 1.4442) continue;
-          if (!pass95) continue;
+          if (nPhoCand > 0.9) continue;
           if (ph_SigmaIEtaIEta < 0.001) continue;
           if (ph_SigmaIPhiIPhi < 0.001) continue;
           if (abs(ph_SeedTime) > 3.) continue;
           if (deltaPhiPUPPImetPho < 2.0) continue;
           if (phoPtOverPUPPImet > 1.4) continue;
-          if (puppiMET < 160) continue;
+          if (puppiMET < 200) continue;
           if (minDeltaPhiPUPPImetJet30 < 0.5) continue;
           if (hasElectron) continue;
           if (hasMuon) continue;
-          if (!haspixelseed) continue;
           if (eleVeto == 1) continue;
           if (muoVeto == 1) continue;
           if (tauVeto == 1) continue;
@@ -597,15 +590,13 @@ void plots(){
         //jetfakes
         if (fil == 23) {
           if (ph_et < 225) continue;
-          if (fabs(ph_eta) > 1.4442) continue;
-          if (pass95) continue;
-          if (!passjetfakes) continue;
+          if (nPhoCand > 0.9) continue;
           if (ph_SigmaIEtaIEta < 0.001) continue;
           if (ph_SigmaIPhiIPhi < 0.001) continue;
           if (abs(ph_SeedTime) > 3.) continue;
           if (deltaPhiPUPPImetPho < 2.0) continue;
           if (phoPtOverPUPPImet > 1.4) continue;
-          if (puppiMET < 160) continue;
+          if (puppiMET < 200) continue;
           if (minDeltaPhiPUPPImetJet30 < 0.5) continue;
           if (hasElectron) continue;
           if (hasMuon) continue;
@@ -616,23 +607,23 @@ void plots(){
 
         //Fill histograms here 
         if (fil==0) {
-          hist[fil][0]->Fill(fabs(ph_eta));
-          hist[fil][1]->Fill(ph_phi);
+          hist[fil][0]->Fill(fabs(ph_SCeta));
+          hist[fil][1]->Fill(ph_SCphi);
           hist[fil][2]->Fill(nPUPPIJet30);
           hist[fil][3]->Fill(PUPPIJetHt30);
         } else if ((fil != 0) && (fil !=22) && (fil != 23)) {
-          hist[fil][0]->Fill(fabs(ph_eta), (puWeight/sumGenWeight)*getSF(ph_eta, ph_et));
-          hist[fil][1]->Fill(ph_phi, (puWeight/sumGenWeight)*getSF(ph_eta, ph_et));
-          hist[fil][2]->Fill(nPUPPIJet30, (puWeight/sumGenWeight)*getSF(ph_eta, ph_et));
-          hist[fil][3]->Fill(PUPPIJetHt30, (puWeight/sumGenWeight)*getSF(ph_eta, ph_et));
+          hist[fil][0]->Fill(fabs(ph_SCeta), (puWeight/sumGenWeight)*getSF(ph_SCeta, ph_et));
+          hist[fil][1]->Fill(ph_SCphi, (puWeight/sumGenWeight)*getSF(ph_SCeta, ph_et));
+          hist[fil][2]->Fill(nPUPPIJet30, (puWeight/sumGenWeight)*getSF(ph_SCeta, ph_et));
+          hist[fil][3]->Fill(PUPPIJetHt30, (puWeight/sumGenWeight)*getSF(ph_SCeta, ph_et));
         } else if (fil == 22) {
-          hist[fil][0]->Fill(fabs(ph_eta), eleFakeWeight(ph_eta));
-          hist[fil][1]->Fill(ph_phi, eleFakeWeight(ph_eta));
-          hist[fil][2]->Fill(nPUPPIJet30, eleFakeWeight(ph_eta));
-          hist[fil][3]->Fill(PUPPIJetHt30, eleFakeWeight(ph_eta));
+          hist[fil][0]->Fill(fabs(ph_SCeta), eleFakeWeight(ph_SCeta));
+          hist[fil][1]->Fill(ph_SCphi, eleFakeWeight(ph_SCeta));
+          hist[fil][2]->Fill(nPUPPIJet30, eleFakeWeight(ph_SCeta));
+          hist[fil][3]->Fill(PUPPIJetHt30, eleFakeWeight(ph_SCeta));
         } else if (fil == 23) {
-          hist[fil][0]->Fill(fabs(ph_eta), jetFakeWeight(ph_et));
-          hist[fil][1]->Fill(ph_phi, jetFakeWeight(ph_et));
+          hist[fil][0]->Fill(fabs(ph_SCeta), jetFakeWeight(ph_et));
+          hist[fil][1]->Fill(ph_SCphi, jetFakeWeight(ph_et));
           hist[fil][2]->Fill(nPUPPIJet30, jetFakeWeight(ph_et));
           hist[fil][3]->Fill(PUPPIJetHt30, jetFakeWeight(ph_et));
         }
@@ -691,10 +682,10 @@ void plots(){
         h_all[i]->Add(hist[j][i]);
       }
 
-      Float_t scale = hist[0][i]->Integral()/h_all[i]->Integral(); //scale for data
-      for (int j=1; j<nfile_eff; j++) {
-        hist[j][i]->Scale(scale);
-      }
+      //Float_t scale = hist[0][i]->Integral()/h_all[i]->Integral(); //scale for data
+      //for (int j=1; j<nfile_eff; j++) {
+        //hist[j][i]->Scale(scale);
+      //}
 
       h_allScaled[i] = (TH1F*)hist[1][i]->Clone("h_allScaled");
       for (int j=2; j<nfile_eff; j++) { //sum signal+bkgs correctly normalized
@@ -988,7 +979,9 @@ void plots(){
       leg->SetFillStyle(0);
       leg->SetNColumns(3);
 
+      Float_t stat_ev = ZvvG_ev[0]+WlvG_ev[0]+ZllG_ev[0]+GG_ev[0]+Gjets_ev[0]+QCD_ev[0]+TTg_ev[0]+VV_ev[0]+Wlv_ev[0]+Efake_ev[0]+Jfake_ev[0];
       string data_string = "Data ("+std::to_string(data_ev[0])+" ev.)";
+      string mc_string = "MC stat ("+std::to_string(stat_ev)+" ev.)";
       string ZvvG_string = "Z(#rightarrow #nu #nu) #gamma ("+std::to_string(ZvvG_ev[0])+" ev.)";
       string WlvG_string = "W (#rightarrow l #nu) #gamma ("+std::to_string(WlvG_ev[0])+" ev.)";
       string ZllG_string = "Z(#rightarrow ll) #gamma ("+std::to_string(ZllG_ev[0])+" ev.)";
@@ -1003,7 +996,7 @@ void plots(){
      
       if (is2017 || is2018) {
          leg->AddEntry(hist[0][i], data_string.c_str(), "ep");
-         leg->AddEntry(h_allScaled[i], "MC stat", "f");
+         leg->AddEntry(h_allScaled[i], mc_string.c_str(), "f");
          leg->AddEntry(hist[1][i], ZvvG_string.c_str(), "f");
          leg->AddEntry(hist[2][i], WlvG_string.c_str(), "f");
          leg->AddEntry(hist[3][i], ZllG_string.c_str(), "f");

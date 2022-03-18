@@ -58,7 +58,7 @@ public:
                            std::string BDT_PATH = "/local/cms/user/wadud/aNTGCmet/aNTGC_analysis/phoIDstudy/UL17/BDT/training/tuning/v6/EB/aNTGC_photon_BDT_EB_2021_08_26_09_39_52.model");
                 
                 ~jetfakeSelector() {
-		XGBoosterFree(phoBDT_h);
+		XGBoosterFree(phoBDT_EB_h);
 		std::cout<<"END @ "<<getCurrentTime()<<std::endl;
 		std::cout<<"*************************************************************************************************************************************************"<<std::endl;
 	};
@@ -85,6 +85,7 @@ private:
 	Short_t 		matchWithTrigPho(Short_t _phoIndex, Float_t _deltaRmax, Float_t _relDeltaPtMin, Float_t _relDeltaPtMax);
         Short_t 		nearestFinalGen(Short_t  _phoIndex, Float_t _deltaRmax);
         Short_t 		photonIsTrue(Short_t _phoIndex, Float_t _deltaRmax, Float_t _relDeltaPtMin, Float_t _relDeltaPtMax);
+        Float_t                 getPhoBDTScore(Short_t   iPho);
 
 	TFile *             outFile = nullptr;
 
@@ -254,6 +255,7 @@ private:
 	Float_t 	deltaRtrg_;
 	Float_t 	deltaPttrg_;
 
+        Float_t         nPhoCand_;
 	Float_t 	phoPt_;
 	Float_t 	phoEta_;
 	Float_t 	phoPhi_;
@@ -319,9 +321,6 @@ private:
 	Float_t 	phoBDTpred_;
 	UChar_t 	phoPFClusIDbits_;
 
-	Bool_t 		pass95_ = 0;
-        Bool_t          passjetfakes_ = 0;
-
 	Float_t 	phoMIP_;	
 
 	Float_t 	phoSCet_;
@@ -385,7 +384,7 @@ private:
 
 	/////////////////////////////////////////////////// XGBoost ////////////////////////////////////////////////////////////
 	DMatrixHandle 		dTest;
-	BoosterHandle 		phoBDT_h;
+	BoosterHandle 		phoBDT_EB_h;
 	Bool_t 			predictBDT = 0;
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -464,9 +463,9 @@ jetfakeSelector::jetfakeSelector(std::string FILELIST, std::string OUTFILE, Floa
       
         if (file_exists(BDT_PATH)) {
           std::cout << "\nLoading Photon EE BDT model from " << BDT_PATH << std::endl;
-          XGBoosterCreate(NULL, 0, &phoBDT_h);
-          XGBoosterSetParam(phoBDT_h, "seed", "0");
-          Int_t mLdSuccess = XGBoosterLoadModel(phoBDT_h, BDT_PATH.c_str());
+          XGBoosterCreate(NULL, 0, &phoBDT_EB_h);
+          XGBoosterSetParam(phoBDT_EB_h, "seed", "0");
+          Int_t mLdSuccess = XGBoosterLoadModel(phoBDT_EB_h, BDT_PATH.c_str());
           if (mLdSuccess == 0) predictBDT = 1;
           else {
             std::cout << "Failed to load Photon EE BDT model!" << std::endl;
@@ -631,7 +630,44 @@ Short_t jetfakeSelector::nearestFinalGen(Short_t _phoIndex, Float_t _deltaRmax) 
 
   return matchedGen;
 };
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+Float_t jetfakeSelector::getPhoBDTScore(Short_t iPho) {
 
+
+  Short_t phoSCindex    = _phoDirectEcalSCindex[iPho];
+  Float_t phoSCabsEta = std::abs(_ecalSC_eta[phoSCindex]);
+  Bool_t isEB = (phoSCabsEta <= BETRetaMin);
+  
+  Float_t iPhoBDTpred = -999;
+
+  const float *prediction;
+  bst_ulong out_len;
+  
+  std::vector<Float_t> feats{_phoE2x2Full5x5[iPho] / (_phoR9Full5x5[iPho] * _ecalSC_RawEn[phoSCindex]),
+                               phoSCabsEta,
+                               _phoE1x3Full5x5[iPho] / _ecalSC_RawEn[phoSCindex],
+                               _phoE2ndFull5x5[iPho] / _ecalSC_RawEn[phoSCindex],
+                               _phoE2x5Full5x5[iPho] / _ecalSC_RawEn[phoSCindex],
+                               _phoMaxEnergyXtal[iPho] / _ecalSC_RawEn[phoSCindex],
+                               _ecalSC_etaWidth[phoSCindex] / _ecalSC_phiWidth[phoSCindex],
+                               _ecalSC_etaWidth[phoSCindex],
+                               _ecalSC_phiWidth[phoSCindex],
+                               _phoCalibEt[phoSCindex],
+                               _phoR9Full5x5[iPho],
+                               _phoE2x2Full5x5[iPho] / _ecalSC_RawEn[phoSCindex],
+                               _phoSigmaIEtaIEtaFull5x5[iPho] / _phoSigmaIPhiIPhiFull5x5[iPho],
+                               _phoSigmaIEtaIEtaFull5x5[iPho],
+                               _phoSigmaIEtaIPhiFull5x5[iPho],
+                               _phoSigmaIPhiIPhiFull5x5[iPho]};
+                               
+    XGDMatrixCreateFromMat((float*)feats.data(), 1, feats.size(), -9999999999, &dTest);
+    XGBoosterPredict(phoBDT_EB_h, dTest, 0, 0, 0, &out_len, &prediction);
+    assert(out_len == 1);
+    iPhoBDTpred = prediction[0];
+    XGDMatrixFree(dTest);
+    
+    return iPhoBDTpred;
+};
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 Bool_t jetfakeSelector::selectEvent(){
 	//// reset event cut flow
@@ -719,8 +755,15 @@ void jetfakeSelector::analyze(){
                if (getBit(metFilters, 7))   continue;          //// Flag_eeBadScFilter
                if (getBit(metFilters, 11))  continue;          //// Updated ecalBadCalibFilter
 
+               Float_t  phoBDTThres_EB = 0.8361;
+               Float_t  phoHoEThres_EB = 0.04012;
+               Float_t  phoEcalIsoThres_EB = 1.84;
+               Float_t  phoTkrIsoThres_EB = 1.63;
+
                Float_t highestPhoPt = -999999;
                Int_t highetsPtIndex = -99999;
+               nPhoCand_            = 0.0001;
+
                for(UShort_t iPho=0; iPho<_nPho; iPho++) { //photon loop
 
                   if (_phoCalibEt[iPho] < 225) continue;
@@ -728,25 +771,24 @@ void jetfakeSelector::analyze(){
                   Float_t absSCeta = std::abs(_ecalSC_eta[_phoDirectEcalSCindex[iPho]]);
                   if (absSCeta > BETRetaMin) continue; //EB selection
                   if (getBit((_phoQualityBits[iPho]), 0)) continue; //pixel seed veto
+                  if (_phoMIPTotEnergy[iPho] > 4.9) continue;
 
-                  /*if (isEB) {
+                  Float_t phoPFECALClusIsoCorr = _phoPFClusEcalIso[iPho] - ecalIsoRhoCorrMap.getIsoCorr(absSCeta, _rho, 0) - ecalIsoPtCorrMap.getIsoCorr(absSCeta, _phoCalibEt[iPho], 1);
+                  Float_t phoPFHCALClusIsoCorr = _phoPFClusHcalIso[iPho] - hcalIsoRhoCorrMap.getIsoCorr(absSCeta, _rho, 0) - hcalIsoPtCorrMap.getIsoCorr(absSCeta, _phoCalibEt[iPho], 1);
+                  Float_t phoTkrIsoCorr = _phoTrkSumPtHollowConeDR03[iPho] - tkrIsoRhoCorrMap.getIsoCorr(absSCeta, _rho, 1);
 
-                    if (_phoHoverE[iPho] > phoHoEThres_EB) continue;
-                    if (iPhoPFECALClusIsoCorr > phoEcalIsoThres_EB) continue;
-                    if (iPhoTkrIsoCorr > phoTkrIsoThres_EB) continue;
-                    if (getPhoBDTScore(iPho) < phoBDTThres_EB) continue;
-                    if (_phoMIPTotEnergy[iPho] > 4.9) continue;
+                  if (_phoHoverE[iPho] > 0.0215) continue;
+                  if (phoPFECALClusIsoCorr > 2.94) continue;
+                  if (phoTkrIsoCorr > 2.18) continue;
+                  if (getPhoBDTScore(iPho) < 0.6671) continue;
 
-                  } else {
+                  //Int_t iPhoTrigMatch = matchWithTrigPho(iPho, 0.3, -10., 10.);
+                  //if (iPhoTrigMatch < 0) continue;
 
-                    if (_phoHoverE[iPho] > phoHoEThres_EE) continue;
-                    if (iPhoPFECALClusIsoCorr > phoEcalIsoThres_EE) continue;
-                    if (iPhoTkrIsoCorr > phoTkrIsoThres_EE) continue;
-                    if (getPhoBDTScore(iPho) < phoBDTThres_EE) continue;
-                  }*/
-
-                  Int_t iPhoTrigMatch = matchWithTrigPho(iPho, 0.3, -10., 10.);
-                  if (iPhoTrigMatch < 0) continue;
+                  if ((_phoHoverE[iPho] < phoHoEThres_EB) && (phoPFECALClusIsoCorr < phoEcalIsoThres_EB) && (phoTkrIsoCorr < phoTkrIsoThres_EB) && (getPhoBDTScore(iPho) > phoBDTThres_EB)) {
+                     nPhoCand_++;
+                     continue;
+                  }
 
                   if (_phoCalibEt[iPho] > highestPhoPt) {
                      highestPhoPt = _phoCalibEt[iPho];
@@ -1061,40 +1103,6 @@ void jetfakeSelector::analyze(){
                     }
                   } 
 
-                  if(predictBDT){
-
-                     const float *prediction;
-                     bst_ulong out_len;
-
-                     std::vector<Float_t> feats{_phoE2x2Full5x5[goodPho] / (_phoR9Full5x5[goodPho] * _ecalSC_RawEn[phoSCindex]),
-                                  phoAbsSCEta_,
-                                  _phoE1x3Full5x5[goodPho] / _ecalSC_RawEn[phoSCindex],
-                                  _phoE2ndFull5x5[goodPho] / _ecalSC_RawEn[phoSCindex],
-                                  _phoE2x5Full5x5[goodPho] / _ecalSC_RawEn[phoSCindex],
-                                  _phoMaxEnergyXtal[goodPho] / _ecalSC_RawEn[phoSCindex],
-                                  _ecalSC_etaWidth[phoSCindex] / _ecalSC_phiWidth[phoSCindex],
-                                  _ecalSC_etaWidth[phoSCindex],
-                                  _ecalSC_phiWidth[phoSCindex],
-                                  _phoCalibEt[phoSCindex],
-                                  _phoR9Full5x5[goodPho],
-                                  _phoE2x2Full5x5[goodPho] / _ecalSC_RawEn[phoSCindex],
-                                  _phoSigmaIEtaIEtaFull5x5[goodPho] / _phoSigmaIPhiIPhiFull5x5[goodPho],
-                                  _phoSigmaIEtaIEtaFull5x5[goodPho],
-                                  _phoSigmaIEtaIPhiFull5x5[goodPho],
-                                  _phoSigmaIPhiIPhiFull5x5[goodPho]};
-
-                     XGDMatrixCreateFromMat((float*)feats.data(), 1, feats.size(), -9999999999, &dTest);
-                     XGBoosterPredict(phoBDT_h, dTest, 0, 0, 0, &out_len, &prediction);
-                     assert(out_len == 1);
-                     phoBDTpred_ = prediction[0];
-                     XGDMatrixFree(dTest);
-                     //UL17 EB
-                     pass95_ = (phoBDTpred_ > 0.8361 && phoHoverE_ < 0.04012  &&  phoPFECALClusIsoCorr_ < 1.84  && phoTkrIsoCorr_ < 1.63);
-                     passjetfakes_ = (phoBDTpred_ > 0.6671 && phoHoverE_ < 0.0215  &&  phoPFECALClusIsoCorr_ < 2.94  && phoTkrIsoCorr_ < 2.18);
-
-                     if(pass95_) setBit(phoPFClusIDbits_, 3, 1);
-                  }
-
                fillEventType(fullEB);
 
                } //if goodPho closing
@@ -1287,6 +1295,7 @@ void jetfakeSelector::initEventType(eventType & evType, std::string typeName, st
 	evType.tree->Branch("deltaRtrg", &deltaRtrg_);
 	evType.tree->Branch("deltaPttrg", &deltaPttrg_);
 
+        evType.tree->Branch("nPhoCand", &nPhoCand_);
 	evType.tree->Branch("ph_et", &phoPt_);
 	evType.tree->Branch("ph_eta", &phoEta_);
 	evType.tree->Branch("ph_phi", &phoPhi_);
@@ -1355,9 +1364,6 @@ void jetfakeSelector::initEventType(eventType & evType, std::string typeName, st
 	evType.tree->Branch("ph_PFClusIDbits", &phoPFClusIDbits_);	
 	evType.tree->Branch("ph_IDbit", &phoIDbit_);
 
-	evType.tree->Branch("pass95", &pass95_);	
-        evType.tree->Branch("passjetfakes", &passjetfakes_);
- 
 	evType.tree->Branch("ph_MIP", &phoMIP_);
 	
 	evType.tree->Branch("ph_sc_et", &phoSCet_);

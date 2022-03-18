@@ -43,9 +43,9 @@ struct eventType{
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-class srSelector{
+class efakeSelector{
 public:
-	srSelector(std::string FILELIST,
+	efakeSelector(std::string FILELIST,
                            std::string OUTFILE,
                            Float_t XSECTION = -1.,
                            std::string MCPILEUPHIST = "",
@@ -57,7 +57,7 @@ public:
                            std::string PFHCALCLUS_PTSCALING = "/data/cmszfs1/user/wadud/aNTGCmet/aNTGC_analysis/phoIDstudy/UL17/cutOptimization/bugfix/2017/isoCorrections_woHCAL_hardHoE0p04/phoPFClusHcalIso_PtCorrections.txt",
                            std::string BDT_PATH = "/local/cms/user/wadud/aNTGCmet/aNTGC_analysis/phoIDstudy/UL17/BDT/training/tuning/v6/EB/aNTGC_photon_BDT_EB_2021_08_26_09_39_52.model");
                 
-                ~srSelector() {
+                ~efakeSelector() {
 		XGBoosterFree(phoBDT_EB_h);
 		std::cout<<"END @ "<<getCurrentTime()<<std::endl;
 		std::cout<<"*************************************************************************************************************************************************"<<std::endl;
@@ -404,14 +404,14 @@ private:
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-srSelector::srSelector(std::string FILELIST, std::string OUTFILE, Float_t XSECTION, std::string MCPILEUPHIST, std::string DATAPILEUPHIST,
+efakeSelector::efakeSelector(std::string FILELIST, std::string OUTFILE, Float_t XSECTION, std::string MCPILEUPHIST, std::string DATAPILEUPHIST,
     std::string PFECALCLUS_PUCORRECTIONS, std::string PFHCALCLUS_PUCORRECTIONS, std::string TKRISO_PUCORRECTIONS,
     std::string PFECALCLUS_PTSCALING, std::string PFHCALCLUS_PTSCALING,
     std::string BDT_PATH){
 
 	std::cout<<"*************************************************************************************************************************************************"<<std::endl<<
 	getCurrentTime()<<std::endl<<
-	"Running srSelector"<<std::endl<<
+	"Running efakeSelector"<<std::endl<<
         "\n\nInput parameters:" << std::endl <<
             "\t\tFile list = " << FILELIST << std::endl <<
             "\t\tOutput file = " << OUTFILE << std::endl <<
@@ -494,7 +494,7 @@ srSelector::srSelector(std::string FILELIST, std::string OUTFILE, Float_t XSECTI
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-Short_t	srSelector::matchWithRecoPho(Short_t _genIndex, Float_t _deltaRmax, Float_t _relDeltaPtMin, Float_t _relDeltaPtMax){
+Short_t	efakeSelector::matchWithRecoPho(Short_t _genIndex, Float_t _deltaRmax, Float_t _relDeltaPtMin, Float_t _relDeltaPtMax){
 
 	Short_t matchedRecoPho = -999;
 	Float_t minDeltaR = 999.;
@@ -525,7 +525,7 @@ Short_t	srSelector::matchWithRecoPho(Short_t _genIndex, Float_t _deltaRmax, Floa
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Short_t srSelector::matchWithRecoEle(Short_t _genIndex, Float_t _deltaRmax, Float_t _relDeltaPtMin, Float_t _relDeltaPtMax){
+Short_t efakeSelector::matchWithRecoEle(Short_t _genIndex, Float_t _deltaRmax, Float_t _relDeltaPtMin, Float_t _relDeltaPtMax){
 
         Short_t matchedRecoEle = -999;
         Float_t minDeltaR = 999.;
@@ -556,7 +556,7 @@ Short_t srSelector::matchWithRecoEle(Short_t _genIndex, Float_t _deltaRmax, Floa
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-Short_t  srSelector::matchWithTrigPho(Short_t _phoIndex, Float_t _deltaRmax, Float_t _relDeltaPtMin, Float_t _relDeltaPtMax) {
+Short_t  efakeSelector::matchWithTrigPho(Short_t _phoIndex, Float_t _deltaRmax, Float_t _relDeltaPtMin, Float_t _relDeltaPtMax) {
   Float_t minDeltaR = 999.;
   Short_t matchedTrigPho = -999;
   //UL17 and UL18
@@ -583,7 +583,7 @@ Short_t  srSelector::matchWithTrigPho(Short_t _phoIndex, Float_t _deltaRmax, Flo
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-Short_t srSelector::photonIsTrue(Short_t _phoIndex, Float_t _deltaRmax, Float_t _relDeltaPtMin, Float_t _relDeltaPtMax) {
+Short_t efakeSelector::photonIsTrue(Short_t _phoIndex, Float_t _deltaRmax, Float_t _relDeltaPtMin, Float_t _relDeltaPtMax) {
 
   Short_t matchedPromptGenPho = -999;
   Float_t minDeltaR = 999.;
@@ -613,7 +613,7 @@ Short_t srSelector::photonIsTrue(Short_t _phoIndex, Float_t _deltaRmax, Float_t 
   return matchedPromptGenPho;
 };
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-Short_t srSelector::nearestFinalGen(Short_t _phoIndex, Float_t _deltaRmax) {
+Short_t efakeSelector::nearestFinalGen(Short_t _phoIndex, Float_t _deltaRmax) {
 
   Short_t matchedGen = -999;
   Float_t minDeltaR = 999.;
@@ -634,7 +634,7 @@ Short_t srSelector::nearestFinalGen(Short_t _phoIndex, Float_t _deltaRmax) {
   return matchedGen;
 };
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-Float_t   srSelector::getPhoBDTScore(Short_t iPho) {
+Float_t   efakeSelector::getPhoBDTScore(Short_t iPho) {
 
 
   Short_t phoSCindex    = _phoDirectEcalSCindex[iPho];
@@ -672,7 +672,7 @@ Float_t   srSelector::getPhoBDTScore(Short_t iPho) {
     return iPhoBDTpred;
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-Bool_t srSelector::selectEvent(){
+Bool_t efakeSelector::selectEvent(){
 	//// reset event cut flow
 	fullEB.lastCutStep = 0.;
 	registerAllCutFlow();
@@ -683,7 +683,7 @@ Bool_t srSelector::selectEvent(){
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-Bool_t srSelector::initEventTypes(){
+Bool_t efakeSelector::initEventTypes(){
 	initEventType(fullEB, "tnpPhoIDs", "Full ECAL Barrel");
 	return 1;
 };
@@ -691,7 +691,7 @@ Bool_t srSelector::initEventTypes(){
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void srSelector::analyze(){
+void efakeSelector::analyze(){
 	std::cout<<"--------------------------------------------------------------------------------------------------"<<std::endl<<
 	getCurrentTime()<<std::endl<<
 	"Analyzing events.."<<std::endl;
@@ -773,7 +773,6 @@ void srSelector::analyze(){
 
                   Float_t absSCeta = std::abs(_ecalSC_eta[_phoDirectEcalSCindex[iPho]]);
                   if (absSCeta > BETRetaMin) continue; //EB selection
-                  if (getBit((_phoQualityBits[iPho]), 0)) continue; //pixel seed veto
 
                   Float_t phoPFECALClusIsoCorr = _phoPFClusEcalIso[iPho] - ecalIsoRhoCorrMap.getIsoCorr(absSCeta, _rho, 0) - ecalIsoPtCorrMap.getIsoCorr(absSCeta, _phoCalibEt[iPho], 1);
                   Float_t phoPFHCALClusIsoCorr = _phoPFClusHcalIso[iPho] - hcalIsoRhoCorrMap.getIsoCorr(absSCeta, _rho, 0) - hcalIsoPtCorrMap.getIsoCorr(absSCeta, _phoCalibEt[iPho], 1);
@@ -799,7 +798,10 @@ void srSelector::analyze(){
                   Int_t iPhoTrigMatch = matchWithTrigPho(iPho, 0.3, -10., 10.);
                   if (iPhoTrigMatch < 0) continue;
 
-                  nPhoCand_ += 1.;
+                  if (!getBit((_phoQualityBits[iPho]), 0)) {
+                    nPhoCand_ += 1.;
+                    continue;
+                  }
 
                   if (_phoCalibEt[iPho] > highestPhoPt) {
                      highestPhoPt = _phoCalibEt[iPho];
@@ -1128,7 +1130,7 @@ void srSelector::analyze(){
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-Bool_t srSelector::initNtuples(std::string FILELIST){
+Bool_t efakeSelector::initNtuples(std::string FILELIST){
 
 	inputTree = openTChain(FILELIST, "ggNtuplizer/EventTree");
 	inputTTreeReader.SetTree(inputTree);
@@ -1271,7 +1273,7 @@ Bool_t srSelector::initNtuples(std::string FILELIST){
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void srSelector::initEventType(eventType & evType, std::string typeName, std::string typeTitle){
+void efakeSelector::initEventType(eventType & evType, std::string typeName, std::string typeTitle){
 
 	mkTFileDir(outFile, typeName);
 
@@ -1430,7 +1432,7 @@ void srSelector::initEventType(eventType & evType, std::string typeName, std::st
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void srSelector::fillEventType(eventType & evType){
+void efakeSelector::fillEventType(eventType & evType){
 	evType.tree->Fill();
 
 	//registerCutFlow(evType);
@@ -1439,7 +1441,7 @@ void srSelector::fillEventType(eventType & evType){
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void srSelector::registerAllCutFlow(){
+void efakeSelector::registerAllCutFlow(){
 	registerCutFlow(fullEB);
 };
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1447,7 +1449,7 @@ void srSelector::registerAllCutFlow(){
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Reset lastCutStep before each event
-void srSelector::registerCutFlow(eventType & evType){
+void efakeSelector::registerCutFlow(eventType & evType){
 	evType.cutFlowCount->Fill(evType.lastCutStep);
 	evType.cutFlowGenWeight->Fill(evType.lastCutStep, genWeight_);
 	evType.lastCutStep = evType.lastCutStep + 1.;
